@@ -44,10 +44,6 @@ def _create_device(args, interface, device_address, _poll_response):
     (terminal_id, extended_id) = get_ids(interface, device_address)
 
     logger.info(f'Terminal ID = {terminal_id}')
-
-    if terminal_id.type != TerminalType.CUT:
-        raise UnsupportedDeviceError('Only CUT type terminals are supported')
-
     logger.info(f'Extended ID = {extended_id}')
 
     if extended_id is not None:
