@@ -53,8 +53,10 @@ def _create_device(args, interface, device_address, _poll_response):
 
     logger.info(f'Keyboard = {keyboard_description}')
 
+    features = None
     # Read the terminal features.
-    features = get_features(interface, device_address)
+    if terminal_id.type == TerminalType.CUT:
+        features = get_features(interface, device_address)
 
     logger.info(f'Features = {features}')
 
