@@ -12,6 +12,16 @@ class InterfaceStates(Enum):
     CONNECTED_ACTIVE = auto()
 
 
+class DeviceStates(Enum):
+    """Device States"""
+    INTERFACE_DISCONNECTED = auto()
+    CONNECTION_PENDING = auto()
+    INTERFACE_CONNECTED = auto()
+    PENDING_ONLINE = auto()
+    PENDING_OFFLINE = auto()
+    ONLINE_TO_HOST = auto()
+
+
 class TCAFields(Enum):
     """Terminal Control Area Fields"""
 
