@@ -2,7 +2,14 @@
 DFT Terminal
 """
 
-from enum import Enum
+from enum import Enum, auto
+
+
+class InterfaceStates(Enum):
+    """Interface States"""
+    DISCONNECTED = auto()
+    CONNECTED_IDLE = auto()
+    CONNECTED_ACTIVE = auto()
 
 
 class TCAFields(Enum):
