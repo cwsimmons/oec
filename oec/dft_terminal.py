@@ -3,6 +3,9 @@ DFT Terminal
 """
 
 from enum import Enum, auto
+from .session import Session
+from .device import Device
+from coax import PollAction
 
 
 class InterfaceStates(Enum):
@@ -92,3 +95,39 @@ class TCAFields(Enum):
 # * Any associated parameters are written into CUFRPl-4.
 # * The data, if any, is written in the CUDATA area pointed to by CUDP.
 # * Expedited Status, EXTIME, may be updated.
+
+class DFTTerminal(Device):
+
+    def __init__(self, interface, device_address):
+        super().__init__(interface, device_address)
+
+    def setup(self):
+        pass
+
+    def get_poll_action(self):
+        return PollAction.NONE
+
+    def handle_poll_response(self):
+        print("Handle DFT Poll response")
+
+class DFTSession(Session):
+
+    def __init__(self, terminal):
+        super().__init__(terminal)
+
+    def start(self):
+        print("Starting DFT Session")
+        pass
+
+    def fileno(self):
+        return 0
+
+    def handle_host(self):
+        print("Handling DFT Session Host Data here")
+        return False
+
+    def render(self):
+        pass
+
+    def terminate(self):
+        pass

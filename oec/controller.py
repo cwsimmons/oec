@@ -16,6 +16,7 @@ from coax.multiplexer import PORT_MAP_3299
 from .device import address_commands, format_address, UnsupportedDeviceError
 from .keyboard import Key
 from .session import SessionDisconnectedError
+from .dft_terminal import DFTTerminal, DFTSession
 
 class SessionState(Enum):
     """Session state."""
@@ -118,6 +119,13 @@ class Controller:
             self._start_session(self.devices[device_address])
 
         sessions = { state: [(device_address, session) for (device_address, (_, session)) in group] for (state, group) in groupby(self.sessions.items(), lambda item: item[1][0]) }
+        # The above returns something like
+        # {
+        #    SessionState.STARTING: [(2, session_obj_2), (3, session_obj_3)],
+        #    SessionState.ACTIVE: [(1, session_obj_1)],
+        #    SessionState.TERMINATING: [],
+        # }
+
 
         # Handle started sessions.
         started_sessions = []
@@ -128,7 +136,8 @@ class Controller:
 
                 self.sessions[device_address] = (SessionState.ACTIVE, session)
 
-                self.session_selector.register(session, selectors.EVENT_READ)
+                if not isinstance(session, DFTSession):
+                    self.session_selector.register(session, selectors.EVENT_READ)
 
                 started_sessions.append(session)
 
@@ -213,7 +222,8 @@ class Controller:
 
         self.logger.info(f'Terminating session for device @ {format_address(self.interface, device_address)}')
 
-        self.session_selector.unregister(session)
+        if not isinstance(session, DFTSession):
+            self.session_selector.unregister(session)
 
         def terminate_session():
             session.terminate()
@@ -325,8 +335,11 @@ class Controller:
         self.logger.info(f'Detached device @ {format_address(self.interface, device_address)}')
 
     def _handle_poll_response(self, device, poll_response):
-        if isinstance(poll_response, KeystrokePollResponse):
-            self._handle_keystroke_poll_response(device, poll_response)
+        if isinstance(device, DFTTerminal):
+            device.handle_poll_response(poll_response)
+        else:
+            if isinstance(poll_response, KeystrokePollResponse):
+                self._handle_keystroke_poll_response(device, poll_response)
 
     def _handle_keystroke_poll_response(self, terminal, poll_response):
         device_address = terminal.device_address

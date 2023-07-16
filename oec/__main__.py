@@ -9,6 +9,7 @@ from .interface import InterfaceWrapper
 from .controller import Controller
 from .device import get_ids, get_features, get_keyboard_description, UnsupportedDeviceError
 from .terminal import Terminal
+from .dft_terminal import DFTTerminal, DFTSession
 from .tn3270 import TN3270Session
 
 # VT100 emulation is not supported on Windows.
@@ -46,38 +47,47 @@ def _create_device(args, interface, device_address, _poll_response):
     logger.info(f'Terminal ID = {terminal_id}')
     logger.info(f'Extended ID = {extended_id}')
 
-    if extended_id is not None:
-        logger.info(f'Model = IBM {extended_id[2:6]} or equivalent')
-
-    keyboard_description = get_keyboard_description(terminal_id, extended_id)
-
-    logger.info(f'Keyboard = {keyboard_description}')
-
-    features = None
-    # Read the terminal features.
     if terminal_id.type == TerminalType.CUT:
+
+        if extended_id is not None:
+            logger.info(f'Model = IBM {extended_id[2:6]} or equivalent')
+
+        keyboard_description = get_keyboard_description(terminal_id, extended_id)
+
+        logger.info(f'Keyboard = {keyboard_description}')
+
+        features = None
+        # Read the terminal features.
         features = get_features(interface, device_address)
 
-    logger.info(f'Features = {features}')
+        logger.info(f'Features = {features}')
 
-    # Get the keymap.
-    keymap = _get_keymap(args, keyboard_description)
+        # Get the keymap.
+        keymap = _get_keymap(args, keyboard_description)
 
-    logger.info(f'Keymap = {keymap.name}')
+        logger.info(f'Keymap = {keymap.name}')
 
-    # Create the terminal.
-    terminal = Terminal(interface, device_address, terminal_id, extended_id, features, keymap)
+        # Create the terminal.
+        terminal = Terminal(interface, device_address, terminal_id, extended_id, features, keymap)
+
+    elif terminal_id.type == TerminalType.DFT:
+
+        terminal = DFTTerminal(interface, device_address)
 
     return terminal
 
 def _create_session(args, device):
-    if args.emulator == 'tn3270':
-        return TN3270Session(device, args.host, args.port, args.device_names, args.character_encoding, args.tn3270e_profile)
+    if isinstance(device, Terminal):
+        if args.emulator == 'tn3270':
+            return TN3270Session(device, args.host, args.port, args.device_names, args.character_encoding, args.tn3270e_profile)
 
-    if args.emulator == 'vt100' and IS_VT100_AVAILABLE:
-        host_command = [args.command, *args.command_args]
+        if args.emulator == 'vt100' and IS_VT100_AVAILABLE:
+            host_command = [args.command, *args.command_args]
 
-        return VT100Session(device, host_command)
+            return VT100Session(device, host_command)
+    
+    elif isinstance(device, DFTTerminal):
+        return DFTSession(device)
 
     raise ValueError('Unsupported emulator')
 
